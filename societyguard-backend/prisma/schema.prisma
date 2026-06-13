@@ -127,17 +127,21 @@ model Flat {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  passwordHash String
-  name         String
-  mobile       String?
-  role         UserRole
-  isActive     Boolean   @default(true)
-  lastLoginAt  DateTime?
-  societyId    String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  name          String
+  mobile        String?
+  role          UserRole
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  societyId     String?
+  googleId      String?   @unique
+  avatarUrl     String?
+  authProvider  String    @default("local")
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   society  Society?  @relation(fields: [societyId], references: [id], onDelete: SetNull)
   resident Resident?
