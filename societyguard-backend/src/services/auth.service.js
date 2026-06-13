@@ -1,9 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-// Assuming the global prisma singleton setup might be defined later, we instantiate directly for now
-// or rely on a config file if available. Using basic PrismaClient for now.
-const prisma = new PrismaClient();
+const { prisma } = require('../config/database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 const REFRESH_SECRET = process.env.REFRESH_SECRET || 'fallback_refresh_secret';
