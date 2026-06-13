@@ -1,0 +1,408 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [] // Include extensions here if needed
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  SOCIETY_ADMIN
+  GUARD
+  RESIDENT
+}
+
+enum EntryStatus {
+  PENDING
+  PRE_APPROVED
+  APPROVED
+  REJECTED
+  EXITED
+  CANCELLED
+}
+
+enum DeliveryStatus {
+  RECEIVED
+  NOTIFIED
+  PICKED_UP
+  RETURNED
+}
+
+enum StaffType {
+  MAID
+  DRIVER
+  COOK
+  NANNY
+  OTHER
+}
+
+enum AlertType {
+  MEDICAL
+  FIRE
+  SECURITY
+  OTHER
+}
+
+enum PlanType {
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
+}
+
+model Society {
+  id        String   @id @default(cuid())
+  name      String
+  address   String
+  city      String
+  state     String
+  pincode   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  towers         Tower[]
+  flats          Flat[]
+  guards         Guard[]
+  vehicles       Vehicle[]
+  visitorEntries VisitorEntry[]
+  deliveries     Delivery[]
+  sosAlerts      SOSAlert[]
+  subscription   Subscription?
+  users          User[]
+
+  @@map("societies")
+}
+
+model Tower {
+  id        String   @id @default(cuid())
+  name      String
+  societyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  society Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flats   Flat[]
+
+  @@unique([societyId, name])
+  @@index([societyId])
+  @@map("towers")
+}
+
+model Flat {
+  id        String   @id @default(cuid())
+  number    String
+  floor     Int?
+  societyId String
+  towerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  society          Society           @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  tower            Tower             @relation(fields: [towerId], references: [id], onDelete: Cascade)
+  residents        Resident[]
+  visitorEntries   VisitorEntry[]
+  deliveries       Delivery[]
+  staffAttendances StaffAttendance[]
+  sosAlerts        SOSAlert[]
+  vehicles         Vehicle[]
+  staff            Staff[]
+
+  @@unique([towerId, number])
+  @@index([societyId])
+  @@index([towerId])
+  @@map("flats")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  mobile       String?
+  role         UserRole
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  societyId    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  society  Society?  @relation(fields: [societyId], references: [id], onDelete: SetNull)
+  resident Resident?
+  guard    Guard?
+
+  refreshTokens RefreshToken[]
+  otps          OTP[]
+
+  // Relations as foreign key targets
+  approvedEntries    VisitorEntry[]    @relation("ApprovedEntries")
+  createdEntries     VisitorEntry[]    @relation("CreatedEntries")
+  receivedDeliveries Delivery[]        @relation("ReceivedDeliveries")
+  pickedUpDeliveries Delivery[]        @relation("PickedUpDeliveries")
+  recordedAttendance StaffAttendance[] @relation("RecordedAttendance")
+  raisedAlerts       SOSAlert[]        @relation("RaisedAlerts")
+  acknowledgedAlerts SOSAlert[]        @relation("AcknowledgedAlerts")
+  ownedVehicles      Vehicle[]         @relation("OwnedVehicles")
+
+  @@index([email])
+  @@index([mobile])
+  @@index([societyId])
+  @@map("users")
+}
+
+model Resident {
+  id     String @id @default(cuid())
+  userId String @unique
+  flatId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flat Flat @relation(fields: [flatId], references: [id], onDelete: Cascade)
+
+  @@index([flatId])
+  @@map("residents")
+}
+
+model Guard {
+  id         String    @id @default(cuid())
+  userId     String    @unique
+  societyId  String
+  shiftStart DateTime?
+  shiftEnd   DateTime?
+  pinCode    String? // hashed
+  isOnDuty   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  society Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId])
+  @@map("guards")
+}
+
+model Visitor {
+  id            String   @id @default(cuid())
+  name          String
+  mobile        String
+  photoUrl      String?
+  idProofType   String?
+  idProofNumber String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  visitorEntries VisitorEntry[]
+
+  @@index([mobile])
+  @@map("visitors")
+}
+
+model VisitorEntry {
+  id         String      @id @default(cuid())
+  visitorId  String
+  flatId     String
+  societyId  String
+  purpose    String?
+  status     EntryStatus @default(PENDING)
+  entryTime  DateTime?
+  exitTime   DateTime?
+  approvedAt DateTime?
+  qrToken    String?     @unique
+  notes      String?
+  createdBy  String?
+  approvedBy String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  visitor  Visitor @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  flat     Flat    @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  society  Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  creator  User?   @relation("CreatedEntries", fields: [createdBy], references: [id], onDelete: SetNull)
+  approver User?   @relation("ApprovedEntries", fields: [approvedBy], references: [id], onDelete: SetNull)
+
+  @@index([societyId, createdAt])
+  @@index([flatId, status])
+  @@index([qrToken])
+  @@index([visitorId])
+  @@map("visitor_entries")
+}
+
+model Delivery {
+  id                   String         @id @default(cuid())
+  societyId            String
+  flatId               String
+  category             String
+  deliveryPersonName   String?
+  deliveryPersonMobile String?
+  packageCount         Int            @default(1)
+  status               DeliveryStatus @default(RECEIVED)
+  receivedAt           DateTime       @default(now())
+  pickedUpAt           DateTime?
+  notes                String?
+  photoUrl             String?
+  receivedByGuardId    String?
+  pickedUpById         String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  society       Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flat          Flat    @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  receivedGuard User?   @relation("ReceivedDeliveries", fields: [receivedByGuardId], references: [id], onDelete: SetNull)
+  pickedUpUser  User?   @relation("PickedUpDeliveries", fields: [pickedUpById], references: [id], onDelete: SetNull)
+
+  @@index([societyId, createdAt])
+  @@index([flatId, status])
+  @@map("deliveries")
+}
+
+model Staff {
+  id        String    @id @default(cuid())
+  name      String
+  type      StaffType
+  mobile    String?
+  photoUrl  String?
+  flatId    String
+  isActive  Boolean   @default(true)
+  schedule  Json?
+  validFrom DateTime  @default(now())
+  validTill DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  flat             Flat              @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  staffAttendances StaffAttendance[]
+
+  @@index([flatId])
+  @@map("staff")
+}
+
+model StaffAttendance {
+  id           String    @id @default(cuid())
+  staffId      String
+  flatId       String
+  checkInTime  DateTime?
+  checkOutTime DateTime?
+  status       String    @default("ON_TIME")
+  hoursWorked  Float?
+  recordedById String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  staff        Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  flat         Flat  @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  recordedUser User? @relation("RecordedAttendance", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@index([staffId])
+  @@index([flatId])
+  @@map("staff_attendances")
+}
+
+model Vehicle {
+  id         String   @id @default(cuid())
+  number     String
+  type       String?
+  ownerName  String?
+  societyId  String
+  flatId     String?
+  ownerId    String?
+  isResident Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  society Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flat    Flat?   @relation(fields: [flatId], references: [id], onDelete: SetNull)
+  owner   User?   @relation("OwnedVehicles", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  @@unique([societyId, number])
+  @@index([societyId])
+  @@index([flatId])
+  @@index([ownerId])
+  @@map("vehicles")
+}
+
+model SOSAlert {
+  id               String    @id @default(cuid())
+  societyId        String
+  flatId           String
+  type             AlertType
+  description      String?
+  location         String
+  status           String    @default("ACTIVE")
+  raisedById       String
+  acknowledgedById String?
+  resolvedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  society          Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flat             Flat    @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  raisedUser       User    @relation("RaisedAlerts", fields: [raisedById], references: [id], onDelete: Cascade)
+  acknowledgedUser User?   @relation("AcknowledgedAlerts", fields: [acknowledgedById], references: [id], onDelete: SetNull)
+
+  @@index([societyId, createdAt])
+  @@index([status])
+  @@index([flatId])
+  @@map("sos_alerts")
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  societyId            String             @unique
+  planType             PlanType
+  status               SubscriptionStatus @default(TRIALING)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  trialEndsAt          DateTime?
+  canceledAt           DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  society Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model OTP {
+  id        String    @id @default(cuid())
+  otp       String
+  userId    String
+  purpose   String
+  metadata  Json?
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+  @@index([expiresAt])
+  @@map("otps")
+}
