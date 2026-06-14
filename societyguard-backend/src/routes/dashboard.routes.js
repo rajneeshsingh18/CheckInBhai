@@ -38,7 +38,9 @@ router.get(
       todayDeliveries,
       staffCheckIns,
       activeAlerts,
-      guardDetails
+      guardDetails,
+      currentlyCheckedInStaff,
+      recentStaffActivity
     ] = await Promise.all([
       // 1. Pending Approvals
       prisma.visitorEntry.count({
@@ -54,7 +56,7 @@ router.get(
       }),
       // 4. Staff Check-Ins Today
       prisma.staffAttendance.count({
-        where: { flat: { societyId }, createdAt: { gte: startOfDay } }
+        where: { flat: { societyId }, checkInTime: { gte: startOfDay } }
       }),
       // 5. Active SOS Alerts
       prisma.sOSAlert.count({
@@ -64,6 +66,17 @@ router.get(
       prisma.guard.findUnique({
         where: { userId: req.user.userId },
         select: { isOnDuty: true, shiftStart: true }
+      }),
+      // 7. Currently Checked In Staff
+      prisma.staffAttendance.count({
+        where: { flat: { societyId }, checkInTime: { gte: startOfDay }, checkOutTime: null }
+      }),
+      // 8. Recent Staff Activity (Last 5)
+      prisma.staffAttendance.findMany({
+        where: { flat: { societyId }, createdAt: { gte: startOfDay } },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: { staff: { select: { name: true, type: true } } }
       })
     ]);
 
@@ -75,6 +88,12 @@ router.get(
           todayDeliveries,
           staffCheckIns,
           activeAlerts
+        },
+        staff: {
+          todayCheckIns: staffCheckIns,
+          currentlyCheckedIn: currentlyCheckedInStaff,
+          pendingCheckOuts: currentlyCheckedInStaff,
+          recentActivity: recentStaffActivity
         },
         shift: guardDetails
       }
@@ -99,7 +118,8 @@ router.get(
       activeGuards,
       todayVisitors,
       activeAlerts,
-      recentEntries
+      recentEntries,
+      staffStats
     ] = await Promise.all([
       // Society Stats
       prisma.flat.count({ where: { societyId } }),
@@ -114,13 +134,37 @@ router.get(
         take: 10,
         orderBy: { createdAt: 'desc' },
         include: { visitor: true, flat: true }
+      }),
+      // Staff Stats
+      prisma.staff.groupBy({
+        by: ['type'],
+        where: { flat: { societyId }, isActive: true },
+        _count: { _all: true }
       })
     ]);
+
+    // Complex staff aggregates
+    const [totalRegisteredStaff, todayStaffCheckIns, todayStaffAbsents] = await Promise.all([
+      prisma.staff.count({ where: { flat: { societyId }, isActive: true } }),
+      prisma.staffAttendance.count({ where: { flat: { societyId }, checkInTime: { gte: startOfDay } } }),
+      prisma.staffAttendance.count({ where: { flat: { societyId }, status: 'ABSENT', createdAt: { gte: startOfDay } } })
+    ]);
+
+    const staffByType = staffStats.reduce((acc, curr) => {
+      acc[curr.type] = curr._count._all;
+      return acc;
+    }, {});
 
     res.json({
       data: {
         overview: { totalFlats, totalResidents, activeGuards },
         today: { todayVisitors, activeAlertsCount: activeAlerts.length },
+        staff: {
+          totalRegistered: totalRegisteredStaff,
+          todayCheckIns: todayStaffCheckIns,
+          absentToday: todayStaffAbsents,
+          byType: staffByType
+        },
         activeAlerts,
         recentEntries
       }
@@ -143,7 +187,8 @@ router.get(
       pendingApprovals,
       todayDeliveries,
       staffAttendance,
-      recentVisitors
+      recentVisitors,
+      residentStaff
     ] = await Promise.all([
       // Pending actions for their specific flat
       prisma.visitorEntry.findMany({
@@ -165,8 +210,34 @@ router.get(
         take: 5,
         orderBy: { createdAt: 'desc' },
         include: { visitor: true }
+      }),
+      // Resident's staff list with today's status
+      prisma.staff.findMany({
+        where: { flatId, isActive: true },
+        include: {
+          staffAttendances: {
+            where: { createdAt: { gte: startOfDay } },
+            take: 1,
+            orderBy: { createdAt: 'desc' }
+          }
+        }
       })
     ]);
+
+    const staffTodayStatus = residentStaff.map(s => {
+      const attendance = s.staffAttendances[0];
+      let status = 'NOT_ARRIVED';
+      let time = null;
+      if (attendance) {
+        if (attendance.status === 'ABSENT') status = 'ABSENT';
+        else if (attendance.checkOutTime) status = 'CHECKED_OUT';
+        else if (attendance.checkInTime) {
+          status = 'CHECKED_IN';
+          time = attendance.checkInTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        }
+      }
+      return { name: s.name, type: s.type, status, time };
+    });
 
     res.json({
       data: {
@@ -178,6 +249,10 @@ router.get(
           deliveriesCount: todayDeliveries.length,
           deliveries: todayDeliveries,
           staffPresent: staffAttendance
+        },
+        staff: {
+          totalStaff: residentStaff.length,
+          todayStatus: staffTodayStatus
         },
         recentVisitors
       }

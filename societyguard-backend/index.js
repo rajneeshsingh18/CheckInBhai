@@ -11,12 +11,16 @@ const path = require('path');
 // Utilities
 const { initializeSocket } = require('./src/config/socket');
 const { otpService } = require('./src/services/otp.service');
+const { initializeStaffJobs } = require('./src/jobs/staff-jobs');
 const { AppError } = require('./src/utils/errors');
 
 // Routes
 const authRoutes = require('./src/routes/auth.routes');
 const visitorRoutes = require('./src/routes/visitor.routes');
 const dashboardRoutes = require('./src/routes/dashboard.routes');
+const deliveryRoutes = require('./src/routes/delivery.routes');
+const staffRoutes = require('./src/routes/staff.routes');
+const attendanceRoutes = require('./src/routes/attendance.routes');
 
 const app = express();
 const server = http.createServer(app);
@@ -42,6 +46,9 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/visitors', visitorRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/deliveries', deliveryRoutes);
+app.use('/api/staff', staffRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {
@@ -68,6 +75,9 @@ app.use((err, req, res, next) => {
 cron.schedule('*/15 * * * *', async () => {
   await otpService.cleanupExpiredOTPs();
 });
+
+// Initialize staff-specific jobs (Auto-absent, Expiry check, Weekly summary)
+initializeStaffJobs();
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {

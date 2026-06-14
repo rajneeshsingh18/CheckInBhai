@@ -161,6 +161,70 @@ const notificationService = {
     });
 
     await Promise.allSettled(promises);
+  },
+
+  /**
+   * 5. Send Staff Arrival Notification
+   * Sent to resident when their registered staff checks in.
+   */
+  async sendStaffArrivalNotification(residentUser, staff, attendance) {
+    if (!residentUser || !residentUser.mobile) return;
+
+    const timeString = attendance.checkInTime ? new Date(attendance.checkInTime).toLocaleTimeString('en-IN') : 'Unknown time';
+    const statusPrefix = attendance.status === 'LATE' ? '⚠️ Late arrival: ' : '';
+    const message = `${statusPrefix}${staff.name} (${staff.type}) has arrived at ${timeString}. Status: ${attendance.status}.`;
+
+    await this.sendWhatsApp(residentUser.mobile, 'staff_arrival', {
+      staff_name: staff.name,
+      staff_type: staff.type,
+      time: timeString,
+      status: attendance.status
+    });
+
+    await this.sendSMS(residentUser.mobile, message);
+  },
+
+  /**
+   * 6. Send Staff Departure Notification
+   * Sent to resident when staff checks out.
+   */
+  async sendStaffDepartureNotification(residentUser, staff, attendance) {
+    if (!residentUser || !residentUser.mobile) return;
+
+    const timeString = attendance.checkOutTime ? new Date(attendance.checkOutTime).toLocaleTimeString('en-IN') : 'Unknown time';
+    const message = `${staff.name} has left the society at ${timeString}. Total hours worked: ${attendance.hoursWorked || 0}h.`;
+
+    await this.sendWhatsApp(residentUser.mobile, 'staff_departure', {
+      staff_name: staff.name,
+      time: timeString,
+      hours: attendance.hoursWorked || 0
+    });
+
+    await this.sendSMS(residentUser.mobile, message);
+  },
+
+  /**
+   * 7. Send Staff Absent Notification
+   * Sent when staff doesn't arrive by cutoff.
+   */
+  async sendStaffAbsentNotification(residentUser, staff) {
+    if (!residentUser || !residentUser.mobile) return;
+
+    const message = `${staff.name} (${staff.type}) hasn't arrived today as scheduled. We have marked them as ABSENT.`;
+
+    await this.sendSMS(residentUser.mobile, message);
+  },
+
+  /**
+   * 8. Send Weekly Attendance Summary
+   * Sent every Monday morning.
+   */
+  async sendWeeklyAttendanceSummary(residentUser, staff, summary) {
+    if (!residentUser || !residentUser.mobile) return;
+
+    const message = `Weekly report for ${staff.name}: Present ${summary.presentCount}/${summary.scheduledCount} days, Total ${summary.totalHours} hours.`;
+
+    await this.sendSMS(residentUser.mobile, message);
   }
 };
 
