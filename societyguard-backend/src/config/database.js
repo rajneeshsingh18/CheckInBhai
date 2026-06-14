@@ -1,4 +1,10 @@
 const { PrismaClient, Prisma } = require('@prisma/client');
+const { Pool } = require('pg');
+const { PrismaPg } = require('@prisma/adapter-pg');
+
+const connectionString = process.env.DATABASE_URL;
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
 
 /**
  * 1. Prisma Client Singleton
@@ -6,6 +12,7 @@ const { PrismaClient, Prisma } = require('@prisma/client');
  */
 const globalForPrisma = globalThis;
 const prismaBase = globalForPrisma.prisma || new PrismaClient({
+  adapter,
   log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
 });
 
