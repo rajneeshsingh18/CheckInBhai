@@ -138,29 +138,94 @@ const notificationService = {
 
   /**
    * 4. Send Emergency SOS Alert
-   * HIGH PRIORITY: Sent to all guards and society admins.
+   * HIGH PRIORITY emergency notification to all responders.
+   * Bypasses normal rate limits and uses all channels simultaneously.
    */
   async sendEmergencyAlert(responders, alert, residentUser) {
+    console.log(`[EMERGENCY] Processing alert ${alert.id} for ${responders.length} responders`);
+
     const flatStr = residentUser && residentUser.resident ? `Flat ${residentUser.resident.flat.number}` : 'Unknown Flat';
+    const towerStr = residentUser && residentUser.resident?.flat?.tower ? `Tower ${residentUser.resident.flat.tower.name}` : '';
+    const locationStr = `${towerStr}${towerStr ? ', ' : ''}${flatStr}`;
+    const residentName = residentUser ? residentUser.name : 'Unknown';
     const contactStr = residentUser ? residentUser.mobile : 'Unknown Contact';
     
-    const message = `EMERGENCY ALERT: ${alert.type} reported at ${alert.location} (${flatStr}). Contact: ${contactStr}. Please respond immediately.`;
+    const emojis = { MEDICAL: '🏥', FIRE: '🔥', SECURITY: '🚔', OTHER: '⚠️' };
+    const instructions = {
+      MEDICAL: 'Medical emergency. Arrange first aid/ambulance.',
+      FIRE: 'Fire alert. Activate fire safety protocol.',
+      SECURITY: 'Security threat. All guards respond immediately.',
+      OTHER: 'Emergency reported. Please investigate.'
+    };
 
-    const promises = responders.map(responder => {
-      if (!responder.mobile) return Promise.resolve();
-      
-      return Promise.all([
-        this.sendWhatsApp(responder.mobile, 'emergency_alert', {
-          type: alert.type,
-          location: alert.location,
-          flat: flatStr,
-          contact: contactStr
-        }),
-        this.sendSMS(responder.mobile, message)
-      ]);
+    const emoji = emojis[alert.type] || '🚨';
+    const instruction = instructions[alert.type] || instructions.OTHER;
+
+    const message = `🚨 EMERGENCY ALERT 🚨\n${emoji} Type: ${alert.type}\n📍 Location: ${locationStr}\n👤 Resident: ${residentName} (${contactStr})\n📢 Action: ${instruction}`;
+
+    let report = { totalSent: 0, whatsappDelivered: 0, smsDelivered: 0, failed: 0 };
+
+    const promises = responders.map(async (responder) => {
+      if (!responder.mobile) return;
+
+      try {
+        // Send via ALL channels simultaneously
+        const [waResult, smsResult] = await Promise.allSettled([
+          this.sendWhatsApp(responder.mobile, 'emergency_alert', {
+            type: alert.type,
+            location: locationStr,
+            resident: `${residentName} (${contactStr})`,
+            instruction: instruction
+          }),
+          this.sendSMS(responder.mobile, message)
+        ]);
+
+        report.totalSent++;
+        if (waResult.status === 'fulfilled') report.whatsappDelivered++;
+        else report.failed++;
+
+        if (smsResult.status === 'fulfilled') report.smsDelivered++;
+        else report.failed++;
+
+      } catch (err) {
+        console.error(`[EMERGENCY ERROR] Failed to notify responder ${responder.id}:`, err);
+        report.failed++;
+      }
     });
 
-    await Promise.allSettled(promises);
+    await Promise.all(promises);
+
+    if (report.whatsappDelivered === 0 && report.smsDelivered === 0) {
+      console.error(`[CRITICAL] Emergency Alert ${alert.id} failed to deliver to ANY responder!`);
+    }
+
+    return report;
+  },
+
+  /**
+   * 9. Send Test Notification
+   * Purpose: Test notification system without panic.
+   */
+  async sendTestNotification(admin, channels = ['wa', 'sms']) {
+    console.log(`[TEST] Sending test notification to admin ${admin.name}`);
+    
+    const message = "[TEST] This is a test of the Rakshak emergency notification system. Please ignore.";
+    const report = { wa: false, sms: false };
+
+    try {
+      if (channels.includes('wa')) {
+        await this.sendWhatsApp(admin.mobile, 'test_notification', { message });
+        report.wa = true;
+      }
+      if (channels.includes('sms')) {
+        await this.sendSMS(admin.mobile, message);
+        report.sms = true;
+      }
+    } catch (err) {
+      console.error('[TEST ERROR] Test notification failed:', err);
+    }
+
+    return report;
   },
 
   /**

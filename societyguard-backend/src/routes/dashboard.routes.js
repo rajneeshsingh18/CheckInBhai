@@ -37,10 +37,11 @@ router.get(
       todayVisitors,
       todayDeliveries,
       staffCheckIns,
-      activeAlerts,
+      activeAlertsCount,
       guardDetails,
       currentlyCheckedInStaff,
-      recentStaffActivity
+      recentStaffActivity,
+      activeEmergencyAlerts
     ] = await Promise.all([
       // 1. Pending Approvals
       prisma.visitorEntry.count({
@@ -58,9 +59,9 @@ router.get(
       prisma.staffAttendance.count({
         where: { flat: { societyId }, checkInTime: { gte: startOfDay } }
       }),
-      // 5. Active SOS Alerts
+      // 5. Active SOS Alerts Count
       prisma.sOSAlert.count({
-        where: { societyId, status: 'ACTIVE' }
+        where: { societyId, status: { in: ['ACTIVE', 'ACKNOWLEDGED'] } }
       }),
       // 6. Guard Shift Info
       prisma.guard.findUnique({
@@ -77,8 +78,16 @@ router.get(
         take: 5,
         orderBy: { createdAt: 'desc' },
         include: { staff: { select: { name: true, type: true } } }
+      }),
+      // 9. Active SOS Details (for prominent display)
+      prisma.sOSAlert.findMany({
+        where: { societyId, status: { in: ['ACTIVE', 'ACKNOWLEDGED'] } },
+        orderBy: { createdAt: 'desc' },
+        include: { raisedUser: { select: { name: true } }, flat: true }
       })
     ]);
+
+    const unacknowledgedAlerts = activeEmergencyAlerts.filter(a => a.status === 'ACTIVE').length;
 
     res.json({
       data: {
@@ -87,13 +96,25 @@ router.get(
           todayVisitors,
           todayDeliveries,
           staffCheckIns,
-          activeAlerts
+          activeAlerts: activeAlertsCount
         },
         staff: {
           todayCheckIns: staffCheckIns,
           currentlyCheckedIn: currentlyCheckedInStaff,
           pendingCheckOuts: currentlyCheckedInStaff,
           recentActivity: recentStaffActivity
+        },
+        emergency: {
+          activeAlerts: activeAlertsCount,
+          unacknowledged: unacknowledgedAlerts,
+          latestAlert: activeEmergencyAlerts[0] ? {
+            id: activeEmergencyAlerts[0].id,
+            type: activeEmergencyAlerts[0].type,
+            location: activeEmergencyAlerts[0].location,
+            status: activeEmergencyAlerts[0].status,
+            raisedBy: activeEmergencyAlerts[0].raisedUser.name,
+            time: activeEmergencyAlerts[0].createdAt
+          } : null
         },
         shift: guardDetails
       }
@@ -111,6 +132,9 @@ router.get(
   asyncHandler(async (req, res) => {
     const societyId = req.user.societyId;
     const startOfDay = getStartOfDay();
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
 
     const [
       totalFlats,
@@ -119,7 +143,9 @@ router.get(
       todayVisitors,
       activeAlerts,
       recentEntries,
-      staffStats
+      staffStats,
+      sosStatsToday,
+      sosStatsMonth
     ] = await Promise.all([
       // Society Stats
       prisma.flat.count({ where: { societyId } }),
@@ -127,7 +153,10 @@ router.get(
       prisma.guard.count({ where: { societyId, isOnDuty: true } }),
       // Activity
       prisma.visitorEntry.count({ where: { societyId, createdAt: { gte: startOfDay } } }),
-      prisma.sOSAlert.findMany({ where: { societyId, status: 'ACTIVE' }, include: { flat: true } }),
+      prisma.sOSAlert.findMany({ 
+        where: { societyId, status: { in: ['ACTIVE', 'ACKNOWLEDGED'] } }, 
+        include: { flat: true, raisedUser: { select: { name: true } } } 
+      }),
       // Recent Entries
       prisma.visitorEntry.findMany({
         where: { societyId },
@@ -140,7 +169,10 @@ router.get(
         by: ['type'],
         where: { flat: { societyId }, isActive: true },
         _count: { _all: true }
-      })
+      }),
+      // SOS Aggregates
+      prisma.sOSAlert.count({ where: { societyId, createdAt: { gte: startOfDay } } }),
+      prisma.sOSAlert.findMany({ where: { societyId, createdAt: { gte: startOfMonth } }, select: { type: true, createdAt: true, resolvedAt: true } })
     ]);
 
     // Complex staff aggregates
@@ -155,6 +187,19 @@ router.get(
       return acc;
     }, {});
 
+    // SOS resolution time calc
+    let totalResTime = 0;
+    let resolvedCount = 0;
+    const alertByType = { MEDICAL: 0, FIRE: 0, SECURITY: 0, OTHER: 0 };
+    
+    sosStatsMonth.forEach(a => {
+      alertByType[a.type]++;
+      if (a.resolvedAt) {
+        totalResTime += (new Date(a.resolvedAt) - new Date(a.createdAt)) / 1000;
+        resolvedCount++;
+      }
+    });
+
     res.json({
       data: {
         overview: { totalFlats, totalResidents, activeGuards },
@@ -165,7 +210,20 @@ router.get(
           absentToday: todayStaffAbsents,
           byType: staffByType
         },
-        activeAlerts,
+        emergency: {
+          activeAlerts: activeAlerts.map(a => ({
+            id: a.id,
+            type: a.type,
+            location: a.location,
+            raisedBy: a.raisedUser.name,
+            time: a.createdAt,
+            status: a.status
+          })),
+          todayTotal: sosStatsToday,
+          thisMonthTotal: sosStatsMonth.length,
+          averageResponseTime: resolvedCount > 0 ? Math.round(totalResTime / resolvedCount) : 0,
+          byType: alertByType
+        },
         recentEntries
       }
     });
@@ -188,7 +246,8 @@ router.get(
       todayDeliveries,
       staffAttendance,
       recentVisitors,
-      residentStaff
+      residentStaff,
+      activeSOS
     ] = await Promise.all([
       // Pending actions for their specific flat
       prisma.visitorEntry.findMany({
@@ -221,6 +280,11 @@ router.get(
             orderBy: { createdAt: 'desc' }
           }
         }
+      }),
+      // Any active SOS for this specific flat
+      prisma.sOSAlert.findFirst({
+        where: { flatId, status: { in: ['ACTIVE', 'ACKNOWLEDGED'] } },
+        orderBy: { createdAt: 'desc' }
       })
     ]);
 
@@ -253,6 +317,11 @@ router.get(
         staff: {
           totalStaff: residentStaff.length,
           todayStatus: staffTodayStatus
+        },
+        emergency: {
+          hasActiveAlert: !!activeSOS,
+          lastAlert: activeSOS,
+          quickSOS: true
         },
         recentVisitors
       }

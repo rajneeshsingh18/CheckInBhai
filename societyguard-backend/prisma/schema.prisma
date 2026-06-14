@@ -82,8 +82,24 @@ model Society {
   sosAlerts      SOSAlert[]
   subscription   Subscription?
   users          User[]
+  emergencyContacts EmergencyContact[]
 
   @@map("societies")
+}
+
+model EmergencyContact {
+  id        String   @id @default(cuid())
+  name      String
+  number    String
+  type      String?  // e.g., 'HOSPITAL', 'POLICE'
+  societyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  society Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([societyId])
+  @@map("emergency_contacts")
 }
 
 model Tower {
