@@ -23,6 +23,7 @@ const deliveryRoutes = require('./src/routes/delivery.routes');
 const staffRoutes = require('./src/routes/staff.routes');
 const attendanceRoutes = require('./src/routes/attendance.routes');
 const sosRoutes = require('./src/routes/sos.routes');
+const guestPassRoutes = require('./src/routes/guest-pass.routes');
 
 const app = express();
 const server = http.createServer(app);
@@ -52,6 +53,7 @@ app.use('/api/deliveries', deliveryRoutes);
 app.use('/api/staff', staffRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/sos', sosRoutes);
+app.use('/api/guest-passes', guestPassRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {

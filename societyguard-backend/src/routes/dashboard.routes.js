@@ -41,7 +41,8 @@ router.get(
       guardDetails,
       currentlyCheckedInStaff,
       recentStaffActivity,
-      activeEmergencyAlerts
+      activeEmergencyAlerts,
+      qrScansToday
     ] = await Promise.all([
       // 1. Pending Approvals
       prisma.visitorEntry.count({
@@ -84,6 +85,10 @@ router.get(
         where: { societyId, status: { in: ['ACTIVE', 'ACKNOWLEDGED'] } },
         orderBy: { createdAt: 'desc' },
         include: { raisedUser: { select: { name: true } }, flat: true }
+      }),
+      // 10. QR Scans Today
+      prisma.visitorEntry.count({
+        where: { societyId, qrToken: { not: null }, entryTime: { gte: startOfDay }, status: { in: ['APPROVED', 'EXITED'] } }
       })
     ]);
 
@@ -96,7 +101,8 @@ router.get(
           todayVisitors,
           todayDeliveries,
           staffCheckIns,
-          activeAlerts: activeAlertsCount
+          activeAlerts: activeAlertsCount,
+          qrScans: qrScansToday
         },
         staff: {
           todayCheckIns: staffCheckIns,
