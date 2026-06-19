@@ -10,6 +10,33 @@
 !.yarn/releases
 !.yarn/versions
 
+
+.kiro 
+.qwen 
+.zencoder 
+.claude 
+.agents
+
+
+/generated/prisma
+
+AGENTS.md
+GEMINI.md
+DESIGN.md
+phase_1_frontend.md
+phase_2_frontend.md
+phase_3.md
+phase_4.md
+phase_5.md
+phase_6.md
+phase_7.md
+phase_8.md
+phase_9.md
+phase_10.md
+phase_11.md
+
+README.md
+
 # testing
 /coverage
 
@@ -42,3 +69,4 @@ next-env.d.ts
 
 AGENTS.md
 CLAUDE.md
+DESIGN.md

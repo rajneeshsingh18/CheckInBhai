@@ -181,6 +181,7 @@ const runTransaction = async (callback, maxRetries = 3) => {
 
 module.exports = {
   prisma,
+  prismaBase, // Exported for administrative tasks like seeding to bypass soft-delete
   getPrismaClientForUser,
   runTransaction
 };

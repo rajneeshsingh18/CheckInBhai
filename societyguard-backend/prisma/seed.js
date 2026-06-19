@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { prisma } = require('../src/config/database');
+const { prismaBase: prisma } = require('../src/config/database');
 const bcrypt = require('bcryptjs');
 
 async function main() {

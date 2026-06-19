@@ -56,7 +56,7 @@ const initializeSOSJobs = () => {
 
           await prisma.sOSAlert.update({
             where: { id: alert.id },
-            data: { notes: alert.notes ? `${alert.notes}\n[ESCALATED to Super Admin]` : '[ESCALATED to Super Admin]' }
+            data: { description: alert.description ? `${alert.description}\n[ESCALATED to Super Admin]` : '[ESCALATED to Super Admin]' }
           });
         }
       }
