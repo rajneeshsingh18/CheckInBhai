@@ -47,7 +47,11 @@ export default function GuardLoginPage() {
   const onSubmit = async (data: GuardLoginFormValues) => {
     try {
       setIsLoading(true);
-      const response = await api.post("/auth/guard-login", data);
+      const response = await api.post("/auth/guard/login", {
+        societyId: data.societyId,
+        guardId: data.guardId,
+        pin: data.pinCode,
+      });
       
       // Save society ID for next time
       localStorage.setItem("rakshak_society_id", data.societyId);

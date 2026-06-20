@@ -50,7 +50,18 @@ const authService = {
       throw new Error('Email is already registered');
     }
 
+    if (societyId) {
+      const societyExists = await prisma.society.findUnique({ where: { id: societyId } });
+      if (!societyExists) {
+        throw new Error('Invalid Society ID. Please check and try again.');
+      }
+    }
+
     const passwordHash = await bcrypt.hash(password, 12);
+
+    if (role === 'GUARD' && !societyId) {
+      throw new Error('Society ID is required to register a guard');
+    }
 
     const user = await prisma.user.create({
       data: {
@@ -61,7 +72,17 @@ const authService = {
         role,
         societyId,
         authProvider: 'local',
+        ...(role === 'GUARD' && {
+          guard: {
+            create: {
+              societyId,
+            }
+          }
+        })
       },
+      include: {
+        guard: true
+      }
     });
 
     const { accessToken, refreshToken } = generateTokens(user);
@@ -76,7 +97,10 @@ const authService = {
   async loginWithEmail(email, password) {
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { resident: true },
+      include: { 
+        resident: true,
+        guard: true
+      },
     });
 
     if (!user || user.authProvider !== 'local') {
@@ -205,7 +229,10 @@ const authService = {
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      include: { resident: true },
+      include: { 
+        resident: true,
+        guard: true
+      },
     });
 
     if (!user || !user.isActive) {
@@ -338,7 +365,11 @@ const authService = {
   async guardLoginWithPin(societyId, guardId, pin) {
     const guard = await prisma.guard.findUnique({
       where: { id: guardId },
-      include: { user: true },
+      include: {
+        user: {
+          include: { guard: true }
+        }
+      },
     });
 
     if (!guard || guard.societyId !== societyId) {

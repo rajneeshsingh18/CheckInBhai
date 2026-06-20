@@ -23,9 +23,13 @@ const registerSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string(),
   role: z.enum(["SUPER_ADMIN", "SOCIETY_ADMIN", "GUARD", "RESIDENT"]),
+  societyId: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
+}).refine((data) => data.role === "SUPER_ADMIN" || !!data.societyId, {
+  message: "Society ID is required for this role",
+  path: ["societyId"],
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -39,13 +43,17 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      role: "RESIDENT"
+      role: "RESIDENT",
+      societyId: ""
     }
   });
+
+  const selectedRole = watch("role");
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
@@ -127,7 +135,7 @@ export default function RegisterPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
-                <Select onValueChange={(value: "SUPER_ADMIN" | "SOCIETY_ADMIN" | "GUARD" | "RESIDENT") => setValue("role", value)} defaultValue="RESIDENT" disabled={isLoading}>
+                <Select onValueChange={(value) => { if (value) setValue("role", value as "SUPER_ADMIN" | "SOCIETY_ADMIN" | "GUARD" | "RESIDENT"); }} defaultValue="RESIDENT" disabled={isLoading}>
                   <SelectTrigger className={errors.role ? "border-red-500" : ""}>
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
@@ -137,8 +145,23 @@ export default function RegisterPage() {
                     <SelectItem value="SOCIETY_ADMIN">Society Admin</SelectItem>
                   </SelectContent>
                 </Select>
+
                 {errors.role && <p className="text-sm text-red-500">{errors.role.message}</p>}
               </div>
+
+              {selectedRole !== "SUPER_ADMIN" && (
+                <div className="space-y-2">
+                  <Label htmlFor="societyId">Society ID</Label>
+                  <Input
+                    id="societyId"
+                    placeholder="Enter Society ID (e.g. cmqi12n6h0001is77i1mv68gq)"
+                    {...register("societyId")}
+                    className={errors.societyId ? "border-red-500" : ""}
+                    disabled={isLoading}
+                  />
+                  {errors.societyId && <p className="text-sm text-red-500">{errors.societyId.message}</p>}
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>

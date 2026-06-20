@@ -199,4 +199,17 @@ router.get(
   })
 );
 
+/**
+ * 10. GET /flats
+ * Get all flats in the guard's/user's society.
+ */
+router.get(
+  '/flats',
+  asyncHandler(async (req, res) => {
+    const flats = await visitorService.getSocietyFlats(req.user);
+    res.json({ data: flats });
+  })
+);
+
 module.exports = router;
+

@@ -108,19 +108,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="p-4 border-t border-gray-200">
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center w-full focus:outline-none">
-                  <Avatar className="w-9 h-9 border border-gray-200">
-                    <AvatarFallback className="bg-orange-100 text-orange-700">
-                      {user.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="ml-3 flex-1 text-left">
-                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{user.role.replace('_', ' ')}</p>
-                  </div>
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
-                </button>
+              <DropdownMenuTrigger className="flex items-center w-full focus:outline-none">
+                <Avatar className="w-9 h-9 border border-gray-200">
+                  <AvatarFallback className="bg-orange-100 text-orange-700">
+                    {user.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="ml-3 flex-1 text-left">
+                  <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{user.role.replace('_', ' ')}</p>
+                </div>
+                <ChevronDown className="w-4 h-4 text-gray-400" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
@@ -185,14 +183,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             ) : (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="focus:outline-none">
-                    <Avatar className="w-8 h-8 border border-gray-200">
-                      <AvatarFallback className="bg-orange-100 text-orange-700">
-                        {user.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </button>
+                <DropdownMenuTrigger className="focus:outline-none">
+                  <Avatar className="w-8 h-8 border border-gray-200">
+                    <AvatarFallback className="bg-orange-100 text-orange-700">
+                      {user.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={logout} className="text-red-600">

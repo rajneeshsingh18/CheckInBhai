@@ -331,7 +331,29 @@ const visitorService = {
     }
 
     return entry;
+  },
+
+  /**
+   * 10. Get all flats in a society (For dropdown/combobox search)
+   */
+  async getSocietyFlats(user) {
+    const societyId = user.societyId;
+    if (!societyId) throw new ValidationError("User has no associated society");
+
+    return prisma.flat.findMany({
+      where: { societyId },
+      include: {
+        tower: {
+          select: { name: true }
+        }
+      },
+      orderBy: [
+        { tower: { name: 'asc' } },
+        { number: 'asc' }
+      ]
+    });
   }
 };
 
 module.exports = visitorService;
+

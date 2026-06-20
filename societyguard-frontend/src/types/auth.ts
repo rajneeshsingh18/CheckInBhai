@@ -8,6 +8,12 @@ export interface User {
   mobile?: string;
   societyId?: string;
   flatId?: string;
+  guard?: {
+    id: string;
+    userId: string;
+    societyId: string;
+    pinCode?: string;
+  };
 }
 
 export interface AuthResponse {
