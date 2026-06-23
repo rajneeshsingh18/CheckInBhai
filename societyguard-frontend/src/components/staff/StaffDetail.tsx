@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { ArrowLeft, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight, Ban } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight, Ban, Banknote } from "lucide-react";
 import Link from "next/link";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
@@ -216,6 +216,35 @@ export default function StaffDetail({ staffId }: StaffDetailProps) {
               </div>
             </div>
           </div>
+
+          {/* Salary Widget */}
+          {(report?.monthlySalary || report?.hourlyRate) && (
+            <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-3xl p-6 shadow-xl shadow-green-200/50 border border-green-200">
+              <h2 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
+                <Banknote className="w-5 h-5 text-green-600" /> Salary Estimate
+              </h2>
+              <div className="space-y-4">
+                <div className="flex justify-between items-end border-b border-green-200 pb-3">
+                  <div>
+                    <p className="text-xs font-bold text-green-600 uppercase tracking-wider">Estimated Pay</p>
+                    <p className="text-3xl font-black text-green-900 mt-1">₹{report?.summary?.estimatedSalary?.toLocaleString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-bold text-green-700 bg-green-200/50 px-2 py-1 rounded-md">
+                      {report?.summary?.salaryBasis} Basis
+                    </p>
+                  </div>
+                </div>
+                <div className="text-xs text-green-800 font-medium">
+                  {report?.summary?.salaryBasis === 'Monthly' ? (
+                    <p>Based on ₹{report.monthlySalary?.toLocaleString()}/mo. Deductions applied for late arrivals and absences.</p>
+                  ) : (
+                    <p>Based on ₹{report.hourlyRate}/hr for {report?.summary?.totalHours} hours worked.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

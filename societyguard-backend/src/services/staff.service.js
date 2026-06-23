@@ -21,7 +21,9 @@ const registerStaffSchema = z.object({
   type: z.enum(['MAID', 'DRIVER', 'COOK', 'NANNY', 'OTHER']),
   mobile: z.string().regex(/^[6-9]\d{9}$/, "Invalid Indian mobile number").optional(),
   schedule: staffScheduleSchema,
-  validTill: z.string().datetime().optional().or(z.date().optional())
+  validTill: z.string().datetime().optional().or(z.date().optional()),
+  monthlySalary: z.number().nonnegative().optional(),
+  hourlyRate: z.number().nonnegative().optional()
 });
 
 const staffService = {
@@ -61,6 +63,8 @@ const staffService = {
         flatId,
         validFrom: new Date(),
         validTill: parsedData.validTill ? new Date(parsedData.validTill) : null,
+        monthlySalary: parsedData.monthlySalary || null,
+        hourlyRate: parsedData.hourlyRate || null,
         isActive: true
       },
       include: { flat: true }
@@ -328,16 +332,34 @@ const staffService = {
       const weeksInMonth = 4.345; // average
       const expectedWorkingDays = Math.round(scheduledDaysCount * weeksInMonth);
 
+      // Salary Calculation Logic
+      let estimatedSalary = 0;
+      let salaryBasis = 'None';
+      if (staff.monthlySalary) {
+        salaryBasis = 'Monthly';
+        const perDaySalary = staff.monthlySalary / (expectedWorkingDays || 30);
+        // Estimate based on present days minus late penalty (e.g. 0.5 day for late)
+        const latePenalty = lateDays * 0.5 * perDaySalary;
+        estimatedSalary = Math.max(0, (presentDays * perDaySalary) - latePenalty);
+      } else if (staff.hourlyRate) {
+        salaryBasis = 'Hourly';
+        estimatedSalary = totalHours * staff.hourlyRate;
+      }
+
       return {
         staffId: staff.id,
         name: staff.name,
         type: staff.type,
+        monthlySalary: staff.monthlySalary,
+        hourlyRate: staff.hourlyRate,
         summary: {
           presentDays,
           absentDays,
           lateDays,
           totalHours: parseFloat(totalHours.toFixed(2)),
-          expectedWorkingDays
+          expectedWorkingDays,
+          estimatedSalary: Math.round(estimatedSalary),
+          salaryBasis
         },
         dailyBreakdown: attendance
       };

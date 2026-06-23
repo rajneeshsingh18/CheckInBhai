@@ -22,6 +22,8 @@ const staffSchema = z.object({
   name: z.string().min(2, "Name is required"),
   type: z.enum(['MAID', 'DRIVER', 'COOK', 'NANNY', 'OTHER']),
   mobile: z.string().regex(/^[6-9]\d{9}$/, "Invalid mobile number").optional().or(z.literal('')),
+  paymentType: z.enum(['MONTHLY', 'HOURLY', 'NONE']),
+  salaryAmount: z.coerce.number().min(0).optional(),
 });
 
 type StaffFormValues = z.infer<typeof staffSchema>;
@@ -52,10 +54,12 @@ export default function ResidentStaff() {
     enabled: activeTab === "report"
   });
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<StaffFormValues>({
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<StaffFormValues>({
     resolver: zodResolver(staffSchema),
-    defaultValues: { type: 'MAID' }
+    defaultValues: { type: 'MAID', paymentType: 'NONE' }
   });
+
+  const paymentType = watch('paymentType');
 
   const addStaffMutation = useMutation({
     mutationFn: async (data: StaffFormValues) => {
@@ -63,6 +67,8 @@ export default function ResidentStaff() {
         name: data.name,
         type: data.type,
         mobile: data.mobile || undefined,
+        monthlySalary: data.paymentType === 'MONTHLY' ? data.salaryAmount : undefined,
+        hourlyRate: data.paymentType === 'HOURLY' ? data.salaryAmount : undefined,
         schedule: {
           days: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
           checkInWindow: { start: "06:00", end: "12:00" },
@@ -303,6 +309,30 @@ export default function ResidentStaff() {
                 <Input {...register("mobile")} placeholder="9876543210" maxLength={10} />
                 {errors.mobile && <p className="text-xs text-red-500">{errors.mobile.message}</p>}
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Payment Basis</label>
+                <Select onValueChange={(val) => setValue('paymentType', val as any)} defaultValue="NONE">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Basis" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
+                    <SelectItem value="MONTHLY">Monthly Fixed</SelectItem>
+                    <SelectItem value="HOURLY">Hourly Rate</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {paymentType !== 'NONE' && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Amount (₹)</label>
+                  <Input type="number" {...register("salaryAmount")} placeholder="e.g. 5000" />
+                  {errors.salaryAmount && <p className="text-xs text-red-500">{errors.salaryAmount.message}</p>}
+                </div>
+              )}
             </div>
 
             <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={addStaffMutation.isPending}>
