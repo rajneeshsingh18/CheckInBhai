@@ -10,6 +10,8 @@
 // const MSG91_AUTH_KEY = process.env.MSG91_AUTH_KEY;
 // const SENDER_ID = process.env.MSG91_SENDER_ID || 'RKSHAK';
 
+const pushService = require('./push.service');
+
 const notificationService = {
   /**
    * Send a raw SMS message.
@@ -247,6 +249,12 @@ const notificationService = {
     });
 
     await this.sendSMS(residentUser.mobile, message);
+    
+    await pushService.sendToUser(residentUser.id, {
+      title: 'Staff Arrived',
+      body: message,
+      url: `/resident/staff`
+    });
   },
 
   /**
@@ -266,6 +274,12 @@ const notificationService = {
     });
 
     await this.sendSMS(residentUser.mobile, message);
+
+    await pushService.sendToUser(residentUser.id, {
+      title: 'Staff Departed',
+      body: message,
+      url: `/resident/staff`
+    });
   },
 
   /**
@@ -278,6 +292,12 @@ const notificationService = {
     const message = `${staff.name} (${staff.type}) hasn't arrived today as scheduled. We have marked them as ABSENT.`;
 
     await this.sendSMS(residentUser.mobile, message);
+
+    await pushService.sendToUser(residentUser.id, {
+      title: 'Staff Absent',
+      body: message,
+      url: `/resident/staff`
+    });
   },
 
   /**

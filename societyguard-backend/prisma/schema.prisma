@@ -165,6 +165,7 @@ model User {
 
   refreshTokens RefreshToken[]
   otps          OTP[]
+  pushSubscriptions PushSubscription[]
 
   // Relations as foreign key targets
   approvedEntries    VisitorEntry[]    @relation("ApprovedEntries")
@@ -291,11 +292,14 @@ model Staff {
   name      String
   type      StaffType
   mobile    String?
-  photoUrl  String?
-  flatId    String
-  isActive  Boolean   @default(true)
-  schedule  Json?
-  validFrom DateTime  @default(now())
+  photoUrl      String?
+  flatId        String
+  isActive      Boolean   @default(true)
+  schedule      Json?
+  monthlySalary Float?
+  hourlyRate    Float?
+  notesForGuard String?
+  validFrom     DateTime  @default(now())
   validTill DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -425,4 +429,17 @@ model OTP {
   @@index([userId, purpose])
   @@index([expiresAt])
   @@map("otps")
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  keys      Json
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }

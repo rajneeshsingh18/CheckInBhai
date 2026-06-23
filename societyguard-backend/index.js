@@ -24,6 +24,7 @@ const staffRoutes = require('./src/routes/staff.routes');
 const attendanceRoutes = require('./src/routes/attendance.routes');
 const sosRoutes = require('./src/routes/sos.routes');
 const guestPassRoutes = require('./src/routes/guest-pass.routes');
+const notificationRoutes = require('./src/routes/notification.routes');
 
 const app = express();
 const server = http.createServer(app);
@@ -54,6 +55,7 @@ app.use('/api/staff', staffRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/sos', sosRoutes);
 app.use('/api/guest-passes', guestPassRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {

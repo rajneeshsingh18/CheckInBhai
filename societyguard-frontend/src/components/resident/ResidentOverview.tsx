@@ -15,8 +15,10 @@ import {
   CheckCircle, 
   XCircle,
   ChevronRight,
-  Phone
+  Phone,
+  BellRing
 } from "lucide-react";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,6 +31,7 @@ export default function ResidentOverview() {
   const [isPressing, setIsPressing] = useState(false);
   const pressTimer = useRef<NodeJS.Timeout | null>(null);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
+  const { isSupported, isSubscribed, subscribe } = usePushNotifications();
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['residentDashboard'],
@@ -129,6 +132,16 @@ export default function ResidentOverview() {
           <h1 className="text-2xl font-bold text-gray-900">Resident Dashboard</h1>
           <p className="text-gray-500">Overview of your flat's activity</p>
         </div>
+        {isSupported && !isSubscribed && (
+          <Button 
+            onClick={subscribe}
+            variant="outline" 
+            className="border-green-200 text-green-700 hover:bg-green-50 mt-2 sm:mt-0"
+          >
+            <BellRing className="w-4 h-4 mr-2" />
+            Enable Notifications
+          </Button>
+        )}
       </div>
 
       {/* SOS Emergency Button Section */}
