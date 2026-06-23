@@ -58,7 +58,17 @@ export default function ResidentStaff() {
 
   const addStaffMutation = useMutation({
     mutationFn: async (data: StaffFormValues) => {
-      const res = await api.post('/staff', data);
+      const payload = {
+        name: data.name,
+        type: data.type,
+        mobile: data.mobile || undefined,
+        schedule: {
+          days: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
+          checkInWindow: { start: "06:00", end: "12:00" },
+          checkOutWindow: { start: "14:00", end: "20:00" }
+        }
+      };
+      const res = await api.post('/staff', payload);
       return res.data;
     },
     onSuccess: () => {
