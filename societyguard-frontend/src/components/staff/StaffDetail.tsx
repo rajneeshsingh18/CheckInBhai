@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { ArrowLeft, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight, Ban, Banknote } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, Clock, AlertTriangle, CheckCircle, ChevronLeft, ChevronRight, Ban, Banknote, MessageSquare } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { format, isSameMonth, parseISO, startOfMonth } from "date-fns";
@@ -23,7 +24,10 @@ const TYPE_EMOJIS: Record<string, string> = {
 };
 
 export default function StaffDetail({ staffId }: StaffDetailProps) {
+  const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState<Date>(startOfMonth(new Date()));
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [noteInput, setNoteInput] = useState("");
 
   // Fetch basic staff details
   const { data: staffData, isLoading: isStaffLoading } = useQuery({
@@ -48,6 +52,21 @@ export default function StaffDetail({ staffId }: StaffDetailProps) {
     },
   });
 
+  const updateNoteMutation = useMutation({
+    mutationFn: async (note: string) => {
+      const res = await api.put(`/staff/${staffId}`, { notesForGuard: note });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Note for guard updated!");
+      queryClient.invalidateQueries({ queryKey: ["staff", staffId] });
+      setIsEditingNote(false);
+    },
+    onError: () => {
+      toast.error("Failed to update note");
+    }
+  });
+
   if (isStaffLoading) {
     return <div className="p-8 animate-pulse bg-neutral-100 h-96 rounded-3xl"></div>;
   }
@@ -60,7 +79,7 @@ export default function StaffDetail({ staffId }: StaffDetailProps) {
   const presentDates = attendanceRecords
     .filter((a: any) => a.checkInTime && a.status !== "LATE")
     .map((a: any) => parseISO(a.checkInTime));
-    
+
   const lateDates = attendanceRecords
     .filter((a: any) => a.status === "LATE")
     .map((a: any) => parseISO(a.checkInTime));
@@ -163,7 +182,7 @@ export default function StaffDetail({ staffId }: StaffDetailProps) {
         <div className="space-y-6">
           <div className="bg-white rounded-3xl p-6 shadow-xl shadow-neutral-200/50 border border-neutral-100">
             <h2 className="text-lg font-bold text-neutral-900 mb-4">Monthly Summary</h2>
-            
+
             {isReportLoading ? (
               <div className="space-y-3 animate-pulse">
                 <div className="h-16 bg-neutral-100 rounded-2xl"></div>
@@ -245,6 +264,57 @@ export default function StaffDetail({ staffId }: StaffDetailProps) {
               </div>
             </div>
           )}
+
+          {/* Guard Note Widget */}
+          <div className="bg-amber-50 rounded-3xl p-6 shadow-xl shadow-amber-200/50 border border-amber-200">
+            <h2 className="text-lg font-bold text-amber-900 mb-4 flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-amber-600" /> Note for Gate Guard
+            </h2>
+            {isEditingNote ? (
+              <div className="space-y-3">
+                <textarea
+                  className="w-full p-3 rounded-xl border border-amber-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  rows={3}
+                  value={noteInput}
+                  onChange={(e) => setNoteInput(e.target.value)}
+                  placeholder="e.g. Please give the spare keys to the maid today."
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button variant="ghost" size="sm" onClick={() => setIsEditingNote(false)} className="text-amber-700 hover:bg-amber-100">Cancel</Button>
+                  <Button
+                    size="sm"
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                    onClick={() => updateNoteMutation.mutate(noteInput)}
+                    disabled={updateNoteMutation.isPending}
+                  >
+                    Save Note
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {staff?.notesForGuard ? (
+                  <p className="text-sm font-medium text-amber-800 bg-amber-100/50 p-4 rounded-xl border border-amber-200/50 italic">
+                    "{staff.notesForGuard}"
+                  </p>
+                ) : (
+                  <p className="text-sm text-amber-700/60 italic p-4 text-center border border-dashed border-amber-200 rounded-xl">
+                    No note set for the guard.
+                  </p>
+                )}
+                <Button
+                  variant="outline"
+                  className="w-full border-amber-300 text-amber-700 hover:bg-amber-100"
+                  onClick={() => {
+                    setNoteInput(staff?.notesForGuard || "");
+                    setIsEditingNote(true);
+                  }}
+                >
+                  {staff?.notesForGuard ? "Update Note" : "Leave Note for Guard"}
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

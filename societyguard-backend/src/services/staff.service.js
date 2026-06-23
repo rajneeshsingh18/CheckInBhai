@@ -21,9 +21,9 @@ const registerStaffSchema = z.object({
   type: z.enum(['MAID', 'DRIVER', 'COOK', 'NANNY', 'OTHER']),
   mobile: z.string().regex(/^[6-9]\d{9}$/, "Invalid Indian mobile number").optional(),
   schedule: staffScheduleSchema,
-  validTill: z.string().datetime().optional().or(z.date().optional()),
   monthlySalary: z.number().nonnegative().optional(),
-  hourlyRate: z.number().nonnegative().optional()
+  hourlyRate: z.number().nonnegative().optional(),
+  notesForGuard: z.string().max(255).optional()
 });
 
 const staffService = {
@@ -65,6 +65,7 @@ const staffService = {
         validTill: parsedData.validTill ? new Date(parsedData.validTill) : null,
         monthlySalary: parsedData.monthlySalary || null,
         hourlyRate: parsedData.hourlyRate || null,
+        notesForGuard: parsedData.notesForGuard || null,
         isActive: true
       },
       include: { flat: true }
@@ -278,6 +279,7 @@ const staffService = {
         type: s.type,
         flatNumber: s.flat.number,
         towerName: s.flat.tower.name,
+        notesForGuard: s.notesForGuard,
         todayAttendance
       };
 

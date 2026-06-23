@@ -14,6 +14,7 @@ interface StaffInfo {
   type: "MAID" | "DRIVER" | "COOK" | "NANNY" | "OTHER";
   flatNumber: string;
   towerName: string;
+  notesForGuard?: string;
   todayAttendance: {
     id: string;
     checkInTime: string;
@@ -215,6 +216,12 @@ export default function StaffAttendanceForm() {
                       <p className="text-xs text-neutral-500 mt-0.5">
                         {staff.type} • Flat {staff.towerName}-{staff.flatNumber}
                       </p>
+                      {staff.notesForGuard && (
+                        <p className="mt-2 text-[11px] font-medium text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200/50 flex items-start gap-1">
+                          <AlertCircle className="w-3 h-3 text-amber-600 mt-0.5 shrink-0" />
+                          <span>{staff.notesForGuard}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                   <Button
@@ -256,6 +263,12 @@ export default function StaffAttendanceForm() {
                       <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold text-emerald-600">
                         <Clock className="w-3 h-3" /> Checked In: {formatTime(staff.todayAttendance?.checkInTime)}
                       </span>
+                      {staff.notesForGuard && (
+                        <p className="mt-2 text-[11px] font-medium text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200/50 flex items-start gap-1">
+                          <AlertCircle className="w-3 h-3 text-amber-600 mt-0.5 shrink-0" />
+                          <span>{staff.notesForGuard}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
                   <Button

@@ -63,6 +63,10 @@ sequenceDiagram
 *   **Real-time Operations**: Monitor gate statistics, active visitor volumes, and delivery status logs.
 *   **Detailed Analytics**: Export chronological audit trails and security analytics.
 
+### Upcoming Features
+*   **Automated "Absent" Workflows**: Background CRON jobs to automatically mark expected staff as "ABSENT" if they fail to show up by a certain time, sending an automatic alert to the resident.
+*   **Web Share API integration for Guest Passes**: Allow residents to easily share QR code passes via WhatsApp/SMS using the native device share sheet.
+
 ---
 
 ## Technology Stack
