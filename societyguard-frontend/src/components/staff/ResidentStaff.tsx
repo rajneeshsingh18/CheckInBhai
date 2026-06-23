@@ -15,7 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Users, UserPlus, Phone, Calendar as CalendarIcon, Clock, XCircle } from "lucide-react";
+import { Users, UserPlus, Phone, Calendar as CalendarIcon, Clock, XCircle, CalendarDays } from "lucide-react";
+import Link from "next/link";
 
 const staffSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -146,6 +147,11 @@ export default function ResidentStaff() {
                             </Button>
                           </a>
                         )}
+                        <Link href={`/resident/staff/${staff.id}`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full border-blue-200 text-blue-700 hover:bg-blue-50">
+                            <CalendarDays className="w-3 h-3 mr-1" /> Calendar
+                          </Button>
+                        </Link>
                         <Button 
                           variant="ghost" 
                           size="sm" 
