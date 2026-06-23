@@ -1,4 +1,4 @@
-# 🛡️ Rakshak (SocietyGuard)
+#  Rakshak (SocietyGuard)
 
 [![Next.js](https://img.shields.io/badge/Next.js-15+-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-green?style=for-the-badge&logo=node.js)](https://nodejs.org/)
@@ -10,7 +10,7 @@ Rakshak (SocietyGuard) is a comprehensive, production-grade SaaS platform design
 
 ---
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 The workspace is split into two decoupled packages:
 
@@ -42,7 +42,7 @@ sequenceDiagram
 
 ---
 
-## 🌟 Core Features
+## Core Features
 
 ### 1. Guard Portal & Gates (`/guard`)
 *   **Rapid Authentication**: Authenticate directly at the gate using a unique **Society ID + Guard ID + 6-Digit PIN** (hashed with bcrypt).
@@ -65,7 +65,7 @@ sequenceDiagram
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Backend
 *   **Runtime**: Node.js
@@ -84,7 +84,7 @@ sequenceDiagram
 
 ---
 
-## ⚡ Setup & Installation
+## Setup & Installation
 
 ### 1. Database Configuration
 Ensure your database connection string is placed in the backend's environmental configuration:
@@ -122,7 +122,7 @@ Open two terminals to launch both development servers simultaneously:
 
 ---
 
-## 🔑 Test Credentials (Green Valley Apartments)
+## Test Credentials (Green Valley Apartments)
 
 Use these seeded database credentials to verify standard workflows:
 
@@ -139,7 +139,7 @@ Use these seeded database credentials to verify standard workflows:
 
 ---
 
-## 🚀 Guard Onboarding Walkthrough
+## Guard Onboarding Walkthrough
 
 If registering a new guard from scratch:
 
