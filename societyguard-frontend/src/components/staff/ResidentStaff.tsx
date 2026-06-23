@@ -216,15 +216,15 @@ export default function ResidentStaff() {
                       <div className="flex justify-between items-center mb-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="w-10 h-10 border-2 border-white shadow-sm">
-                            <AvatarFallback className="bg-green-100 text-green-700">{staffRep.staffName.charAt(0)}</AvatarFallback>
+                            <AvatarFallback className="bg-green-100 text-green-700">{staffRep.name?.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <h4 className="font-bold text-gray-900">{staffRep.staffName}</h4>
+                            <h4 className="font-bold text-gray-900">{staffRep.name}</h4>
                             <span className="text-xs font-medium text-gray-500">{staffRep.type}</span>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-gray-900">{staffRep.summary.totalPresent} <span className="text-sm font-normal text-gray-500">days</span></div>
+                          <div className="text-2xl font-bold text-gray-900">{staffRep.summary.presentDays} <span className="text-sm font-normal text-gray-500">days</span></div>
                           <div className="text-xs text-gray-500">{staffRep.summary.totalHours.toFixed(1)} hrs total</div>
                         </div>
                       </div>
@@ -233,18 +233,17 @@ export default function ResidentStaff() {
                         {['S','M','T','W','T','F','S'].map((d, i) => (
                           <div key={i} className="text-center text-[10px] font-bold text-gray-400">{d}</div>
                         ))}
-                        {/* Empty padding for calendar start day could be added here if we wanted a true calendar grid. For now just showing the records sequentially or summarized */}
                       </div>
                       
                       <div className="mt-4 pt-4 border-t border-gray-200">
                         <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Recent Records</h5>
                         <div className="space-y-2">
-                          {staffRep.records.slice(0, 5).map((rec: any, i: number) => (
+                          {staffRep.dailyBreakdown && staffRep.dailyBreakdown.slice(0, 5).map((rec: any, i: number) => (
                             <div key={i} className="flex justify-between items-center text-sm bg-white p-2 rounded border border-gray-100">
-                              <span className="font-medium">{format(new Date(rec.date), 'MMM d, yyyy')}</span>
+                              <span className="font-medium">{format(new Date(rec.createdAt), 'MMM d, yyyy')}</span>
                               <div className="flex items-center gap-3">
-                                {rec.checkIn && <span className="text-gray-600 flex items-center gap-1"><Clock className="w-3 h-3"/> {format(new Date(rec.checkIn), 'HH:mm')}</span>}
-                                {rec.checkOut && <span className="text-gray-600 flex items-center gap-1 text-right w-16">- {format(new Date(rec.checkOut), 'HH:mm')}</span>}
+                                {rec.checkInTime && <span className="text-gray-600 flex items-center gap-1"><Clock className="w-3 h-3"/> {format(new Date(rec.checkInTime), 'HH:mm')}</span>}
+                                {rec.checkOutTime && <span className="text-gray-600 flex items-center gap-1 text-right w-16">- {format(new Date(rec.checkOutTime), 'HH:mm')}</span>}
                                 <span className={`w-16 text-right text-xs font-bold ${rec.status === 'ABSENT' ? 'text-red-500' : 'text-green-600'}`}>{rec.status}</span>
                               </div>
                             </div>
