@@ -151,28 +151,19 @@ export default function StaffDetail({ staffId }: StaffDetailProps) {
                 classNames={{
                   months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
                   month: "space-y-4",
-                  caption: "flex justify-center pt-1 relative items-center mb-4",
-                  caption_label: "text-lg font-bold text-neutral-800",
                   nav: "space-x-1 flex items-center bg-white border border-neutral-200 rounded-xl p-1",
-                  nav_button: "h-8 w-8 bg-transparent p-0 opacity-50 hover:opacity-100 rounded-lg hover:bg-neutral-100 flex items-center justify-center transition-all",
-                  nav_button_previous: "absolute left-1",
-                  nav_button_next: "absolute right-1",
-                  table: "w-full border-collapse space-y-1",
-                  head_row: "flex w-full mb-2",
-                  head_cell: "text-neutral-500 rounded-md w-12 font-bold text-[0.8rem] uppercase tracking-wider",
-                  row: "flex w-full mt-2",
-                  cell: "text-center text-sm p-0 relative focus-within:relative focus-within:z-20 h-12 w-12 flex items-center justify-center",
-                  day: "h-10 w-10 p-0 font-medium rounded-xl hover:bg-neutral-200 transition-all focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer",
-                  day_selected: "bg-orange-600 text-white hover:bg-orange-600 hover:text-white font-bold shadow-lg shadow-orange-500/30",
-                  day_today: "border-2 border-orange-500 text-orange-700 font-bold",
-                  day_outside: "text-neutral-300 opacity-50",
-                  day_disabled: "text-neutral-300 opacity-50",
-                  day_hidden: "invisible",
-                }}
-                components={{
-                  IconLeft: () => <ChevronLeft className="h-5 w-5" />,
-                  IconRight: () => <ChevronRight className="h-5 w-5" />,
-                }}
+                  month_grid: "w-full border-collapse space-y-1",
+                  weekdays: "flex w-full mb-2",
+                  weekday: "text-neutral-500 rounded-md w-12 font-bold text-[0.8rem] uppercase tracking-wider",
+                  week: "flex w-full mt-2",
+                  day: "text-center text-sm p-0 relative focus-within:relative focus-within:z-20 h-12 w-12 flex items-center justify-center",
+                  day_button: "h-10 w-10 p-0 font-medium rounded-xl hover:bg-neutral-200 transition-all focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer",
+                  selected: "bg-orange-600 text-white hover:bg-orange-600 hover:text-white font-bold shadow-lg shadow-orange-500/30",
+                  today: "border-2 border-orange-500 text-orange-700 font-bold",
+                  outside: "text-neutral-300 opacity-50",
+                  disabled: "text-neutral-300 opacity-50",
+                  hidden: "invisible",
+                }} as any}
               />
             </div>
           </div>

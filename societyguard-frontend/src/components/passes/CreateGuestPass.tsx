@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { QrCode, Plus, Share2, Copy, Trash2, Calendar } from "lucide-react";
+import { QrCode, Plus, Share2, Copy, Trash2, Calendar, CheckCircle } from "lucide-react";
 
 const passSchema = z.object({
   visitorName: z.string().min(2, "Name is required"),

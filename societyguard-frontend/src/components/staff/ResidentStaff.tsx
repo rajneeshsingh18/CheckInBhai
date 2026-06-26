@@ -23,7 +23,7 @@ const staffSchema = z.object({
   type: z.enum(['MAID', 'DRIVER', 'COOK', 'NANNY', 'OTHER']),
   mobile: z.string().regex(/^[6-9]\d{9}$/, "Invalid mobile number").optional().or(z.literal('')),
   paymentType: z.enum(['MONTHLY', 'HOURLY', 'NONE']),
-  salaryAmount: z.coerce.number().min(0).optional(),
+  salaryAmount: z.any().optional(),
 });
 
 type StaffFormValues = z.infer<typeof staffSchema>;
@@ -67,8 +67,8 @@ export default function ResidentStaff() {
         name: data.name,
         type: data.type,
         mobile: data.mobile || undefined,
-        monthlySalary: data.paymentType === 'MONTHLY' ? data.salaryAmount : undefined,
-        hourlyRate: data.paymentType === 'HOURLY' ? data.salaryAmount : undefined,
+        monthlySalary: data.paymentType === 'MONTHLY' ? Number(data.salaryAmount) : undefined,
+        hourlyRate: data.paymentType === 'HOURLY' ? Number(data.salaryAmount) : undefined,
         schedule: {
           days: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'],
           checkInWindow: { start: "06:00", end: "12:00" },
@@ -194,7 +194,7 @@ export default function ResidentStaff() {
                 Monthly Summary
               </CardTitle>
               <div className="flex items-center gap-2">
-                <Select value={reportMonth.toString()} onValueChange={(val) => setReportMonth(parseInt(val))}>
+                <Select value={reportMonth.toString()} onValueChange={(val) => setReportMonth(parseInt(val as string))}>
                   <SelectTrigger className="w-32">
                     <SelectValue placeholder="Month" />
                   </SelectTrigger>
@@ -206,7 +206,7 @@ export default function ResidentStaff() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={reportYear.toString()} onValueChange={(val) => setReportYear(parseInt(val))}>
+                <Select value={reportYear.toString()} onValueChange={(val) => setReportYear(parseInt(val as string))}>
                   <SelectTrigger className="w-24">
                     <SelectValue placeholder="Year" />
                   </SelectTrigger>
@@ -330,7 +330,7 @@ export default function ResidentStaff() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Amount (₹)</label>
                   <Input type="number" {...register("salaryAmount")} placeholder="e.g. 5000" />
-                  {errors.salaryAmount && <p className="text-xs text-red-500">{errors.salaryAmount.message}</p>}
+                  {errors.salaryAmount && <p className="text-xs text-red-500">{errors.salaryAmount.message?.toString()}</p>}
                 </div>
               )}
             </div>
