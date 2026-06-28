@@ -68,8 +68,9 @@ export default function RegisterPage() {
       
       toast.success("Registration successful!");
       
-      const role = response.data.user.role.toLowerCase().replace('_', '-');
-      router.push(`/${role}`);
+      const role = response.data.user.role;
+      const targetPath = role === 'SOCIETY_ADMIN' ? 'admin' : role.toLowerCase().replace('_', '-');
+      router.push(`/${targetPath}`);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || "Registration failed");

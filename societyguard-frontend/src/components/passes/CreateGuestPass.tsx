@@ -94,7 +94,7 @@ export default function CreateGuestPass() {
   const handleShare = async (pass: any) => {
     const text = `Guest Pass for ${pass.visitorName}\nValid till: ${format(new Date(pass.validTill), "MMM d, yyyy")}\nPresent this QR code at the gate.`;
     
-    if (navigator.share) {
+    if (typeof navigator !== "undefined" && typeof (navigator as any).share === "function") {
       try {
         await navigator.share({
           title: 'Guest Pass',

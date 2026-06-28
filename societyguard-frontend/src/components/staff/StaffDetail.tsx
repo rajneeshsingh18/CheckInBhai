@@ -163,7 +163,7 @@ export default function StaffDetail({ staffId }: StaffDetailProps) {
                   outside: "text-neutral-300 opacity-50",
                   disabled: "text-neutral-300 opacity-50",
                   hidden: "invisible",
-                }} as any}
+                } as any}
               />
             </div>
           </div>

@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { UserRole } from "@/types/auth";
+import NotificationCenter from "@/components/shared/NotificationCenter";
 
 interface NavItem {
   name: string;
@@ -167,10 +168,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           
           <div className="flex items-center space-x-3">
-            <button className="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none">
-              <Bell className="w-6 h-6" />
-              <span className="absolute top-1.5 right-1.5 block w-2 h-2 rounded-full bg-red-500 ring-2 ring-white" />
-            </button>
+            <NotificationCenter />
             
             {isGuard ? (
               <div className="flex items-center space-x-1">

@@ -30,6 +30,7 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${instrumentSerif.variable} antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-screen bg-gray-50 text-gray-900">
         <Providers>

@@ -2,10 +2,21 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
-import { useSocketConnection } from "@/hooks/useSocket";
+import { ThemeProvider } from "next-themes";
+import {
+  useSocketConnection,
+  useVisitorNotifications,
+  useDeliveryNotifications,
+  useSOSNotifications,
+  useStaffNotifications
+} from "@/hooks/useSocket";
 
-function SocketConnector() {
+function RealTimeManager() {
   useSocketConnection();
+  useVisitorNotifications();
+  useDeliveryNotifications();
+  useSOSNotifications();
+  useStaffNotifications();
   return null;
 }
 
@@ -25,9 +36,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SocketConnector />
-      {children}
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={true}>
+        <RealTimeManager />
+        {children}
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
-

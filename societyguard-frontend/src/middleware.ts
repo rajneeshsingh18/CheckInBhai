@@ -3,6 +3,11 @@ import type { NextRequest } from 'next/server';
 
 const publicRoutes = ['/login', '/register', '/guard-login', '/forgot-password'];
 
+const getRolePath = (role: string) => {
+  if (role === 'SOCIETY_ADMIN') return 'admin';
+  return role.toLowerCase().replace('_', '-');
+};
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
@@ -27,17 +32,43 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // If trying to access auth routes while logged in
-  if (token && userCookie && isPublicRoute) {
+  // If logged in
+  if (token && userCookie) {
+    let user;
     try {
-      const user = JSON.parse(userCookie);
-      // Redirect to role specific dashboard
-      const dashboardUrl = new URL(`/${user.role.toLowerCase().replace('_', '-')}`, request.url);
-      return NextResponse.redirect(dashboardUrl);
+      user = JSON.parse(userCookie);
     } catch {
-      // Invalid cookie, let them proceed to login
-      request.cookies.delete('user');
-      request.cookies.delete('accessToken');
+      // Invalid cookie, clear and redirect to login
+      const res = NextResponse.redirect(new URL('/login', request.url));
+      res.cookies.delete('user');
+      res.cookies.delete('accessToken');
+      res.cookies.delete('refreshToken');
+      return res;
+    }
+
+    // Redirect logged in user from auth routes to their correct dashboard
+    if (isPublicRoute || pathname === '/') {
+      const rolePath = getRolePath(user.role);
+      const dashboardUrl = new URL(`/${rolePath}`, request.url);
+      return NextResponse.redirect(dashboardUrl);
+    }
+
+    // Role-based route protection
+    if (pathname.startsWith('/guard') && user.role !== 'GUARD') {
+      const rolePath = getRolePath(user.role);
+      return NextResponse.redirect(new URL(`/${rolePath}`, request.url));
+    }
+    if (pathname.startsWith('/resident') && user.role !== 'RESIDENT') {
+      const rolePath = getRolePath(user.role);
+      return NextResponse.redirect(new URL(`/${rolePath}`, request.url));
+    }
+    if (pathname.startsWith('/admin') && user.role !== 'SOCIETY_ADMIN') {
+      const rolePath = getRolePath(user.role);
+      return NextResponse.redirect(new URL(`/${rolePath}`, request.url));
+    }
+    if (pathname.startsWith('/super-admin') && user.role !== 'SUPER_ADMIN') {
+      const rolePath = getRolePath(user.role);
+      return NextResponse.redirect(new URL(`/${rolePath}`, request.url));
     }
   }
 
